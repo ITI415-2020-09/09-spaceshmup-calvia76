@@ -37,8 +37,10 @@ public class WeaponDefinition
     public float velocity = 20; // Speed of projectiles
 }
 public class Weapon : MonoBehaviour {
-    static public Transform PROJECTILE_ANCHOR;
+    private readonly HomingMissile homing;
 
+    private float pdelay = .15f;
+    static public Transform PROJECTILE_ANCHOR;
     [Header("Set Dynamically")]
     [SerializeField]
     private WeaponType _type = WeaponType.none;
@@ -46,9 +48,11 @@ public class Weapon : MonoBehaviour {
     public GameObject collar;
     public float lastShotTime; // Time last shot was fired
     private Renderer collarRend;
+    
 
     private void Start()
     {
+        
         collar = transform.Find("Collar").gameObject;
         collarRend = collar.GetComponent<Renderer>();
 
@@ -69,6 +73,7 @@ public class Weapon : MonoBehaviour {
             rootGO.GetComponent<Hero>().fireDelegate += Fire;
         }
     }
+    
 
     public WeaponType type
     {
@@ -117,29 +122,78 @@ public class Weapon : MonoBehaviour {
         switch (type)
         {
             case WeaponType.blaster:
+               
                 p = MakeProjectile();
                 p.rigid.velocity = vel;
                 break;
 
             case WeaponType.spread:
+             
                 p = MakeProjectile(); // Make middle Projectile
                 p.rigid.velocity = vel;
+
                 p = MakeProjectile(); // Make right Projectile
                 p.transform.rotation = Quaternion.AngleAxis(10, Vector3.back);
                 p.rigid.velocity = p.transform.rotation * vel;
+
                 p = MakeProjectile(); // Make left Projectile
                 p.transform.rotation = Quaternion.AngleAxis(-10, Vector3.back);
                 p.rigid.velocity = p.transform.rotation * vel;
+
+                p = MakeProjectile();//Inner Right
+                p.transform.rotation = Quaternion.AngleAxis(5, Vector3.back);
+                p.rigid.velocity = p.transform.rotation * vel;
+
+                p = MakeProjectile(); //Inner left
+                p.transform.rotation = Quaternion.AngleAxis(-5, Vector3.back);
+                p.rigid.velocity = p.transform.rotation * vel;
+
+                break;
+            case WeaponType.laser:
+                p = MakeProjectile();
+                p.rigid.velocity = vel;
+                break;
+            case WeaponType.missile:
+                p = MakeProjectile();
+                p.rigid.velocity = vel;
+                //tried implementing a homing script but didn't work :/
+                //float speed = 5;
+                //float step = speed * Time.deltaTime;
+                //Transform closestEnemy = homing.GetClosestEnemy(Main.S.prefabEnemies, this.transform);
+                //p.transform.position = Vector3.MoveTowards(p.transform.position, closestEnemy.position,step );
+                break;
+            case WeaponType.phaser:
+                StartCoroutine(Burst());
                 break;
         }
     }
 
+    public IEnumerator Burst()
+    {
+        Projectile P;
+        for(int i = 0;i < 2; i++)
+        {
+            P = MakeProjectile();
+            yield return new WaitForSeconds(pdelay);
+        }
+    }
     public Projectile MakeProjectile()
     {
         GameObject go = Instantiate<GameObject>(def.projectilePrefab);
         if(transform.parent.gameObject.tag == "Hero")
         {
-            go.tag = "ProjectileHero";
+            if (Equals(WeaponType.missile))
+            {
+                go.tag = "Missle";
+            }
+            if (Equals(WeaponType.blaster)||Equals(WeaponType.phaser))
+            {
+                go.tag = "ProjectileHero";
+            }
+            if (Equals(WeaponType.laser))
+            {
+                go.tag = "Laser";
+            }
             go.layer = LayerMask.NameToLayer("ProjectileHero");
         }
         else
@@ -147,11 +201,21 @@ public class Weapon : MonoBehaviour {
             go.tag = "ProjectileEnemy";
             go.layer = LayerMask.NameToLayer("ProjectileEnemy");
         }
-        go.transform.position = collar.transform.position;
-        go.transform.SetParent(PROJECTILE_ANCHOR, true);
-        Projectile p = go.GetComponent<Projectile>();
-        p.type = type;
-        lastShotTime = Time.time;
-        return p;
+        if (go.tag == "Laser")
+        {
+
+            go.transform.position = new Vector3(collar.transform.position.x, collar.transform.position.y + 62, collar.transform.position.z);
+            go.transform.SetParent(PROJECTILE_ANCHOR, true);
+            Projectile L = go.GetComponent<Projectile>();
+            L.type = type;
+            lastShotTime = Time.time;
+            return L;
+        }
+            go.transform.position = collar.transform.position;
+            go.transform.SetParent(PROJECTILE_ANCHOR, true);
+            Projectile p = go.GetComponent<Projectile>();
+            p.type = type;
+            lastShotTime = Time.time;
+            return p;
     }
 }

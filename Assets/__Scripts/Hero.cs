@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Hero : MonoBehaviour {
-    static public Hero S; // Singleton
+    public static Hero S; // Singleton
 
     [Header("Set in Inspector")]
     // These fields control the movement of the ship
@@ -42,11 +42,14 @@ public class Hero : MonoBehaviour {
         // Reset the weapons to start _Hero with 1 blaster
         ClearWeapons();
         weapons[0].SetType(WeaponType.blaster);
+       
     }
 	
 	// Update is called once per frame
 	void Update()
     {
+        
+
         // Pull in information from the Input class
         float xAxis = Input.GetAxis("Horizontal");
         float yAxis = Input.GetAxis("Vertical");

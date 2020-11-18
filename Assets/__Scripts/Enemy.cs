@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Enemy : MonoBehaviour {
-
+    
     [Header("Set in Inspector: Enemy")]
     public float speed = 10f; // The speed in m/s
     public float fireRate = 0.3f; // Seconds/shot (Unused)
@@ -87,7 +87,7 @@ public class Enemy : MonoBehaviour {
                 ShowDamage();
                 // Get the damage amount from the Main WEAP_DICT
                 health -= Main.GetWeaponDefinition(p.type).damageOnHit;
-                if(health <= 0)
+                if (health <= 0)
                 {
                     // Tell the Main singleton that this ship was destroyed
                     if (!notifiedOfDestruction)
@@ -100,7 +100,46 @@ public class Enemy : MonoBehaviour {
                 }
                 Destroy(otherGO);
                 break;
+            case "Laser":
 
+                Projectile L = otherGO.GetComponent<Projectile>();
+                if (!bndCheck.isOnScreen)
+                {
+                    Destroy(otherGO);
+                    break;
+                }
+                ShowDamage();
+                health -= Main.GetWeaponDefinition(L.type).continuousDamage;
+                if (health <= 0)
+                {
+                    if (!notifiedOfDestruction)
+                    {
+                        Main.S.ShipDestroyed(this);
+                    }
+                    notifiedOfDestruction = true;
+                    Destroy(this.gameObject);
+                }
+                break;
+            case "Missile":
+                Projectile M = otherGO.GetComponent<Projectile>();
+                Destroy(otherGO);
+                if (!bndCheck.isOnScreen)
+                {
+                    Destroy(otherGO);
+                    break;
+                }
+                ShowDamage();
+                health -= Main.GetWeaponDefinition(M.type).damageOnHit;
+                if(health <= 0)
+                {
+                    if (!notifiedOfDestruction)
+                    {
+                        Main.S.ShipDestroyed(this);
+                    }
+                    notifiedOfDestruction = true;
+                    Destroy(this.gameObject);
+                }
+                break;
             default:
                 print("Enemy hit by non-ProjectileHero: " + otherGO.name);
                 break;
